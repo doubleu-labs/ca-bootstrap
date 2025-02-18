@@ -1,0 +1,13 @@
+*
+
+!.github/
+!.github/workflows/
+!.github/workflows/*
+!scripts/
+!scripts/*
+!.gitignore
+!ca.template.env
+!LICENSE
+!openssl.template.cnf
+!pkcs11.cnf
+!README.md

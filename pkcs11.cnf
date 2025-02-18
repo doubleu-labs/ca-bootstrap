@@ -1,0 +1,12 @@
+[default]
+openssl_conf = openssl_def
+
+[openssl_def]
+engines = engines_def
+
+[engines_def]
+pkcs11 = pkcs11_def
+
+[pkcs11_def]
+engine_id   = pkcs11
+MODULE_PATH = /usr/lib64/libykcs11.so.2
