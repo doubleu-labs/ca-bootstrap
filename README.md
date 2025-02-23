@@ -19,8 +19,8 @@ To create a Root CA, complete the following steps:
 3.  Fill in all values in 'ca.env'
 4.  Optionally modify `[match_pol]` in `openssl.template.cnf`
 5.  Run `./scripts/initialize.sh`
-6.  Run `./scripts/deploy.sh`
-7.  Modify security settings of both secrets databases
+6.  Modify security settings of both secrets databases
+7.  Run `./scripts/deploy.sh`
 8.  Run `./scripts/archive.sh`
 9.  Store `./kdbx/rootca.kdbx` in a secure location
 
