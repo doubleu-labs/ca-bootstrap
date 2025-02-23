@@ -437,7 +437,7 @@ function _ghapp_verify_get_installation_info() {
     rc=$?
     if [ $rc -eq 0 ]; then
         _print_ok_ln >&2
-        printf $info
+        printf "$info"
     else
         _print_error_dialog "Github App failed to get installation information" >&2
     fi
@@ -475,7 +475,7 @@ _print_header_dialog "Verifying Github App Access"
     _should_exit $?
 
     _print_step_dialog "Verifying that Github App as correct permissions"
-    _ghapp_verify_permissions $INSTALLATION_INFO
+    _ghapp_verify_permissions "$INSTALLATION_INFO"
     _should_exit $?
 }
 
