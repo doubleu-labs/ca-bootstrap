@@ -1,6 +1,34 @@
 #!/bin/bash
 
 ################################################################################
+# Parse Script Arguments                                                       #
+################################################################################
+
+function _usage() {
+    cat <<EOF
+usage: purge.sh [ARGUMENTS]
+
+ARGUMENTS:
+    -archives   Purge CA archive files
+    -h, -help   Show this dialog
+EOF
+}
+
+A_ARCHIVES=0
+while [ "$#" -ne 0 ]; do
+    case $1 in
+        "-archives")
+            A_ARCHIVES=1
+        ;;
+        "-h" | "-help")
+            _usage
+            exit 0
+        ;;
+    esac
+    shift
+done
+
+################################################################################
 # Setup Script Environment                                                     #
 ################################################################################
 
@@ -49,6 +77,9 @@ _purge_directory "${CADATAPATH}/kdbx"
 _purge_directory "${CADATAPATH}/secrets"
 _purge_file "${CADATAPATH}/ca.env"
 _purge_file "${CADATAPATH}/openssl.cnf"
-_purge_file "${CADATAPATH}/rootca_*"
+
+if [ "$A_ARCHIVES" -ne 0 ]; then
+    _purge_file "${CADATAPATH}/rootca_*"
+fi
 
 _print_info_dialog "Complete"
