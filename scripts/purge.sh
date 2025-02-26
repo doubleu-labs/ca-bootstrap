@@ -59,6 +59,17 @@ function _purge_file() {
     printf "%s\n" $1
 }
 
+function _git_restore() {
+    file=$1
+    msg=$(git restore $1 2>&1)
+    if [ $? -eq 0 ]; then
+        _print_ok_ln
+    else
+        _print_error
+        printf "%s\n" "$msg"
+    fi
+}
+
 _print_confirmation_dialog $RED \
     "WARNING" "" \
     "This action will permanently remove ALL Root CA data." \
@@ -67,7 +78,7 @@ _print_confirmation_dialog $RED \
 
 _should_exit $?
 
-_print_header_dialog "Sanitizing Root CA Directory Structure"
+_print_step_dialog "Sanitizing Root CA Directory Structure"
 
 _purge_directory "${CADATAPATH}/ca"
 _purge_directory "${CADATAPATH}/certs"
@@ -81,5 +92,8 @@ _purge_file "${CADATAPATH}/openssl.cnf"
 if [ "$A_ARCHIVES" -ne 0 ]; then
     _purge_file "${CADATAPATH}/rootca_*"
 fi
+
+_print_step_dialog "Resetting OpenSSL Configuration Template"
+_git_restore openssl.template.cnf
 
 _print_info_dialog "Complete"
