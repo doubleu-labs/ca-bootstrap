@@ -67,6 +67,7 @@ _should_exit $?
     _append_to_archive "crl/"
     _append_to_archive "db/"
     _append_to_archive "kdbx/yk-pin.kdbx"
+    _append_to_archive "scripts/_common.sh"
     _append_to_archive "scripts/archive.sh"
     _append_to_archive "scripts/deploy.sh"
     _append_to_archive "scripts/revoke.sh"
