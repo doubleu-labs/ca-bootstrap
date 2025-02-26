@@ -102,17 +102,19 @@ Only run this script when you want to create a Root CA. It ***will*** fail if
 
 ### `purge.sh`
 
-Deletes ***ALL*** CA data from `$CADATAPATH`. If `openssl.template.cnf` was
-modified, it ***will not*** be reset. If you want to reset
-`openssl.template.cnf` as well, run the following command if you have a recent
-version of `git`:
+Deletes ***ALL*** CA data from `$CADATAPATH` and resets any changes made to
+`openssl.template.cnf`.
 
-    git restore openssl.template.cnf
+By default, only files used in the setup and initialization of the CA are
+removed. Any CA archives made are preserved, but if you want to delete these as
+well, then:
 
-That will reset the file to the HEAD of the current branch.
+```sh
+./scripts/purge.sh -archives
+```
 
 Only run this script if you've make a mistake generating the Root CA or
-otherwise need to clean `$CADATAPATH`.
+otherwise need to clean up the boostrap environment.
 
 ### `revoke.sh`
 
