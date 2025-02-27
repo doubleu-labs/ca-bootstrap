@@ -150,3 +150,19 @@ Force generates a CRL. The CRL serial is ***always*** incremented.
 Use this script if the CA database (`./db/ca.db`) required manual editing, such
 as un-revoking a certificate. This script is not needed if using `revoke.sh`. Be
 sure to run `deploy.sh -crl` afterwards to deploy the updated CRL.
+
+### `upgrade_archive_scripts.sh`
+
+Upgrades the scripts of your CA archive.
+
+If your CA archive is using out-of-date versions of scripts in this toolkit,
+then run this scripts against your archive to upgrade them.
+
+```sh
+./scripts/upgrade_archive_scripts.sh -f rootca_20250101T121520Z.tar
+```
+
+Currently only supports uncompressed `tar` files.
+
+Use this script if your archive contains out-of-date scripts. This script
+replaces them and creates a new archive with a new timestamp.
