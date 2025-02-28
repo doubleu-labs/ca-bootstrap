@@ -93,6 +93,10 @@ _should_exit $?
 
 function _ghapp_new_jwt() {
     header_payload=$(_ghapp_get_jwt_header_payload)
+    # we're making a temporary fd here to capture and parse openssl's stderr
+    #   for failure keywords because openssl is insane and returns 0 on errors
+    tmppipe=$(mktemp -u)
+    exec 3<> $tmppipe
     signature=$(
         OPENSSL_CONF="${CADATAPATH}/pkcs11.cnf" \
         openssl dgst \
@@ -101,25 +105,33 @@ function _ghapp_new_jwt() {
         -sha256 \
         -sign "pkcs11:id=%03;type=private" \
         -passin file:<(keyctl pipe $KID_YK_PIN) \
-        <(printf $header_payload) | _b64enc
+        <(printf $header_payload) 2>&3 | _b64enc
     )
+    exec 3<&-
+    err=$(cat 0< $tmppipe)
+    rm $tmppipe
+    if echo $err | grep "fail"; then
+        _print_error_dialog "There was an error generating the App's JWT" \
+            "Is the correct YubiKey inserted?" >&2
+        return 1
+    fi
     printf "${header_payload}.${signature}"
     _print_ok_ln >&2
+    return 0
 }
 
 function _ghapp_get_access_token() {
-    is_ok=0
     installation=$(_ghapp_get_installation)
-    if [ $? -eq 0 ]; then
-        is_ok=1
-    else
+    rc=$?
+    if [ $rc -ne 0 ]; then
         _print_error_dialog "There was an error getting the installation" >&2
+        return $rc
     fi
     id=$(jq -r '.id' <<< $installation)
-    if [ $? -eq 0 ]; then
-        is_ok=1
-    else
+    rc=$?
+    if [ $rc -ne 0 ]; then
         _print_error_dialog "There was an error getting the installation id" >&2
+        return $rc
     fi
     req=$(
         curl -f -s -X POST \
@@ -127,20 +139,19 @@ function _ghapp_get_access_token() {
         -H "Authorization: Bearer $JWT" \
         "https://api.github.com/app/installations/${id}/access_tokens"
     )
-    if [ $? -eq 0 ]; then
-        is_ok=1
-    else
+    rc=$?
+    if [ $rc -ne 0 ]; then
         _print_error_dialog "There was an error requesting an access token" >&2
+        return $rc
     fi
     jq -r '.token' <<< $req
-    if [ $? -eq 0 ]; then
-        is_ok=1
-    else
+    rc=$?
+    if [ $rc -ne 0 ]; then
         _print_error_dialog "There was an error parsing the installation id" >&2
+        return $rc
     fi
-    if [ $is_ok -ne 0 ]; then
-        _print_ok_ln >&2
-    fi
+    _print_ok_ln >&2
+    return 0
 }
 
 function _ghapp_check_file_exists() {
@@ -171,53 +182,49 @@ function _should_exit_check_file() {
 }
 
 function _ghapp_get_head_sha() {
-    is_ok=0
     req=$(
         curl -f -s -X GET \
         -H "Accept: application/vnd.github+json" \
         -H "Authorization: token $ACCESS_TOKEN" \
         "https://api.github.com/repos/${DEPLOY_REPO}/git/ref/heads/${DEPLOY_REPO_BRANCH}"
     )
-    if [ $? -eq 0 ]; then
-        is_ok=1
-    else
+    rc=$?
+    if [ $rc -ne 0 ]; then
         _print_error_dialog "There was an error getting the HEAD SHA of the" \
             "target branch" >&2
+        return $rc
     fi
     jq -r '.object.sha' <<< $req
-    if [ $? -eq 0 ]; then
-        is_ok=1
-    else
+    rc=$?
+    if [ $rc -ne 0 ]; then
         _print_error_dialog "There was an error getting the HEAD SHA" >&2
+        return $rc
     fi
-    if [ $is_ok -ne 0 ]; then
-        _print_ok_ln >&2
-    fi
+    _print_ok_ln >&2
+    return 0
 }
 
 function _ghapp_get_slug() {
-    is_ok=0
     req=$(
         curl -f -s -X GET \
         -H "Authorization: Bearer $JWT" \
         https://api.github.com/app
     )
-    if [ $? -eq 0 ]; then
-        is_ok=1
-    else
+    rc=$?
+    if [ $rc -ne 0 ]; then
         _print_error_dialog "There was an error getting the Github App's SLUG" \
             "name" >&2
+        return $rc
     fi
     jq -r '.slug' <<< $req
-    if [ $? -eq 0 ]; then
-        is_ok=1
-    else
+    rc=$?
+    if [ $rc -ne 0 ]; then
         _print_error_dialog "There was an error parsing the Github App's SLUG" \
             "name" >&2
+        return $?
     fi
-    if [ $is_ok -ne 0 ]; then
-        _print_ok_ln >&2
-    fi
+    _print_ok_ln >&2
+    return 0
 }
 
 function _ghapp_create_branch() {
@@ -240,62 +247,64 @@ function _ghapp_create_branch() {
 }
 
 function _ghapp_replace_file() {
-    is_ok=0
     file=$(
         curl -f -s -X GET \
         -H "Authorization: token $ACCESS_TOKEN" \
         "https://api.github.com/repos/${DEPLOY_REPO}/contents/${2}?ref=$PR_BRANCH"
     )
-    if [ $? -eq 0 ]; then
-        is_ok=1
-    else
+    rc=$?
+    if [ $rc -ne 0 ]; then
         _print_error_dialog "There was an error getting remote file" \
             "information for '${2}'" >&2
+        return $rc
     fi
     sha=$(jq -r '.sha' <<< $file)
-    if [ $? -eq 0 ]; then
-        is_ok=1
-    else
+    rc=$?
+    if [ $rc -ne 0 ]; then
         _print_error_dialog "There was an error parsing the SHA for '${2}'" >&2
+        return $rc
     fi
     content=$(base64 -w0 $1)
-    if [ $? -eq 0 ]; then
-        is_ok=1
-    else
+    rc=$?
+    if [ $rc -ne 0 ]; then
         _print_error_dialog "There was an error encoding '${1}'" >&2
+        return $rc
     fi
     curl -f -s -X PUT \
     -H "Authorization: token $ACCESS_TOKEN" \
     "https://api.github.com/repos/${DEPLOY_REPO}/contents/${2}" \
     -d "{\"message\":\"${3}\",\"branch\":\"${PR_BRANCH}\",\"content\":\"${content}\",\"sha\":\"${sha}\"}" \
     > /dev/null
-    if [ $? -eq 0 ]; then
-        is_ok=1
+    rc=$?
+    if [ $rc -ne 0 ]; then
+        _print_error_dialog "There was an error updating a file on the branch" \
+            "${2}"
+        return $rc
     fi
-    if [ $is_ok -ne 0 ]; then
-        _print_ok_ln >&2
-    fi
+    _print_ok_ln >&2
+    return 0
 }
 
 function _ghapp_create_file() {
-    is_ok=0
     content=$(base64 -w0 $1)
-    if [ $? -eq 0 ]; then
-        is_ok=1
-    else
+    rc=$?
+    if [ $rc -ne 0 ]; then
         _print_error_dialog "There was an error encoding '${1}'" >&2
+        return $rc
     fi
     curl -f -s -X PUT \
     -H "Authorization: token $ACCESS_TOKEN" \
     "https://api.github.com/repos/${DEPLOY_REPO}/contents/${2}" \
     -d "{\"message\":\"${3}\",\"branch\":\"${PR_BRANCH}\",\"content\":\"${content}\"}" \
     > /dev/null
-    if [ $? -eq 0 ]; then
-        is_ok=1
+    rc=$?
+    if [ $rc -ne 0 ]; then
+        _print_error_dialog "There was an error creating a file on the branch" \
+            "${2}"
+        return $rc
     fi
-    if [ $is_ok -ne 0 ]; then
-        _print_ok_ln >&2
-    fi
+    _print_ok_ln >&2
+    return 0
 }
 
 function _ghapp_create_pull_request() {
