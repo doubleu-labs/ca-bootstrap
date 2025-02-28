@@ -5,6 +5,9 @@ on:
   push:
     branches:
     - master
+    paths:
+    - README.md
+  workflow_dispatch:
 jobs:
   build:
     runs-on: ubuntu-latest
