@@ -30,6 +30,7 @@ REASON:
     keyCompromise           (requires '-date')
     CACompromise            (requires '-date')
     affiliationChanged
+    superseded
     cessationOfOperation
     certificateHold         (requires '-instruction')
     removeFromCRL
@@ -105,6 +106,7 @@ VALID_REASON=(
     "keyCompromise"
     "CACompromise"
     "affiliationChanged"
+    "superseded"
     "cessationOfOperation"
     "certificateHold"
     "removeFromCRL"
