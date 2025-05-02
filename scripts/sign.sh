@@ -1,12 +1,23 @@
 #!/bin/bash
 
 ################################################################################
+# Setup Script Environment                                                     #
+################################################################################
+
+SCRIPT_DIR=$(cd -- "$(dirname -- "${BASH_SOURCE[0]}" )" &> /dev/null && pwd)
+
+source "${SCRIPT_DIR}/_common.sh"
+
+export CADATAPATH=$(realpath "${SCRIPT_DIR}/../")
+_print_info_dialog "\$CADATAPATH" $CADATAPATH
+
+################################################################################
 # Parse Script Arguments                                                       #
 ################################################################################
 
 function _usage() {
     cat <<EOF
-usage: sign.sh -in <CSR> [ -out <CRT> ] [ -chain ] [ -force ]
+usage: sign.sh -in <CSR> [ -out <CRT> ] [-rootout <CRT> ] [ -chain ] [ -force ]
 EOF
 }
 
@@ -15,8 +26,9 @@ if [ $# -eq 0 ]; then
     exit 1
 fi
 
-declare CSR_IN
+declare CSR_IN ROOT_OUT_PATH
 CRT_OUT="/dev/stdout"
+ROOT_OUT=0
 CHAIN=0
 FORCE=0
 while [ "$#" -ne 0 ]; do
@@ -26,6 +38,10 @@ while [ "$#" -ne 0 ]; do
     elif [[ $1 == "-out" ]]; then
         shift
         CRT_OUT=$(realpath $1)
+    elif [[ $1 == "-rootout" ]]; then
+        shift
+        ROOT_OUT=1
+        ROOT_OUT_PATH=$(realpath $1 2> /dev/null)
     elif [[ $1 == "-chain" ]]; then
         CHAIN=1
     elif [[ $1 == "-force" ]]; then
@@ -39,16 +55,10 @@ if [ -z $CSR_IN ]; then
     exit 1
 fi
 
-################################################################################
-# Setup Script Environment                                                     #
-################################################################################
-
-SCRIPT_DIR=$(cd -- "$(dirname -- "${BASH_SOURCE[0]}" )" &> /dev/null && pwd)
-
-source "${SCRIPT_DIR}/_common.sh"
-
-export CADATAPATH=$(realpath "${SCRIPT_DIR}/../")
-_print_info_dialog "\$CADATAPATH" $CADATAPATH
+if [ $ROOT_OUT -eq 1 ] && [ -z $ROOT_OUT_PATH ]; then
+    _print_error_dialog "'-rootout' must have a path" "$(_usage)"
+    exit 1
+fi
 
 ################################################################################
 # Check Required Commands                                                      #
@@ -112,6 +122,11 @@ echo
 echo "$crt" > "${CRT_OUT}"
 
 _print_info_dialog "Certificate Signed"
+
+if [ ! -z $ROOT_OUT ]; then
+    cp "${CADATAPATH}/ca/ca.crt.pem" "${ROOT_OUT_PATH}"
+    _print_info_dialog Root Certificate Copied
+fi
 
 ################################################################################
 # Cleanup                                                                      #

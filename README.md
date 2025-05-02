@@ -139,7 +139,8 @@ Only run this script when preparing to initialize a new Root CA.
 Signs a Certificate Signing Request (CSR). Outputs the signed certificate to the
 terminal by default. Use the `-out <FILE>` option to write it to a file instead.
 The `-chain` option is also available to include the Root CA certificate with
-the signed certificate.
+the signed certificate. The `-rootout` option will copy the root certificate to
+the specified location.
 
 Use this script when a CSR needs to be signed.
 
