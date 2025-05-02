@@ -14,15 +14,15 @@ storage.
 
 To create a Root CA, complete the following steps:
 
-1.  Run `./scripts/setup.sh`
-2.  Copy App private key to `./secrets` directory
-3.  Fill in all values in 'ca.env'
-4.  Optionally modify `[match_pol]` in `openssl.template.cnf`
-5.  Run `./scripts/initialize.sh`
-6.  Modify security settings of both secrets databases
-7.  Run `./scripts/deploy.sh`
-8.  Run `./scripts/archive.sh`
-9.  Store `./kdbx/rootca.kdbx` in a secure location
+1. Run `./scripts/setup.sh`
+2. Copy App private key to `./secrets` directory
+3. Fill in all values in 'ca.env'
+4. Optionally modify `[match_pol]` in `openssl.template.cnf`
+5. Run `./scripts/initialize.sh`
+6. Modify security settings of both secrets databases
+7. Run `./scripts/deploy.sh`
+8. Run `./scripts/archive.sh`
+9. Store `./kdbx/rootca.kdbx` in a secure location
 
 ## Security of Secrets Databases
 
@@ -53,7 +53,7 @@ encryption is available. Use `argon2id` for the Key Dirivation Function (KDF).
 
 For `rootca.kdbx`, set an ***extremely strong*** passphrase and store a backup
 of the passphrase in a secure location separate from the `rootca.kdbx` file. For
-encryption settings, use a very high Memory Usage (>=1024 MiB) and tweak the 
+encryption settings, use a very high Memory Usage (>=1024 MiB) and tweak the
 Transform Rounds until it feels excessive. Speed should not be desired for
 decryption of this database as it should only really be used for disaster
 recovery.
